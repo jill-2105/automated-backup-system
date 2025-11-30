@@ -1,17 +1,17 @@
 #!/bin/bash
 
 # ====== Global Variables ======
-BACKUP_ROOT="$HOME/backup"
-STATE_FILE="$HOME/.f25state"
-LOG_FILE="$BACKUP_ROOT/f25log.txt"
-PID_FILE="$HOME/.f25.pid"
+BACKUP_ROOT="/home/patel7hb/backup"
+STATE_FILE="/home/patel7hb/.f25state"
+LOG_FILE="/home/patel7hb/backup/f25log.txt"
+PID_FILE="/home/patel7hb/.f25.pid"
 
 # File types to backup (from command line arguments)
 FILE_TYPES=()
 
 # ====== Helper Functions ======
 
-// Initialize directory structure
+# Initialize directory structure
 setupdirs() {
     mkdir -p "$BACKUP_ROOT/fbup"
     mkdir -p "$BACKUP_ROOT/ibup"
@@ -19,7 +19,7 @@ setupdirs() {
     mkdir -p "$BACKUP_ROOT/isbup"
 }
 
-// Initialize state file with counters and timestampsw
+# Initialize state file with counters and timestamps
 initstate() {
     if [ ! -f "$STATE_FILE" ]; then
         echo "fbup=0 ibup=0 dbup=0 isbup=0" > "$STATE_FILE"
@@ -27,44 +27,44 @@ initstate() {
     fi
 }
 
-// Read counter value for backup type
+# Read counter value for backup type
 readcount() {
     local btype=$1
     local count=$(grep "${btype}=" "$STATE_FILE" | head -1 | cut -d'=' -f2)
     echo "$count"
 }
 
-// Write counter value for backup type
+# Write counter value for backup type
 writecount() {
     local btype=$1
     local newval=$2
     sed -i "s/${btype}=[0-9]*/${btype}=${newval}/" "$STATE_FILE"
 }
 
-// Get last backup timestamp for backup type
+# Get last backup timestamp for backup type
 getlasttime() {
     local btype=$1
     local timestamp=$(grep "${btype}_time=" "$STATE_FILE" | cut -d'=' -f2)
     echo "$timestamp"
 }
 
-// Save current timestamp for backup type
+# Save current timestamp for backup type
 savelasttime() {
     local btype=$1
     local timestamp=$(date +%s)
     sed -i "s/${btype}_time=[0-9]*/${btype}_time=${timestamp}/" "$STATE_FILE"
 }
 
-// Write log entry for successful backup
+# Write log entry for successful backup
 writelog() {
     local tarname=$1
-    local timestamp=$(date "+%a %d %b%Y %I:%M:%S %p %Z")
+    local timestamp=$(date "+%a %d %b %Y %I:%M:%S %p %Z")
     echo "$timestamp $tarname was created" >> "$LOG_FILE"
 }
 
-// Write log entry when no changes detected
+# Write log entry when no changes detected
 writenolog() {
-    local timestamp=$(date "+%a %d %b%Y %I:%M:%S %p %Z")
+    local timestamp=$(date "+%a %d %b %Y %I:%M:%S %p %Z")
     echo "$timestamp No changes-Incremental backup was not created" >> "$LOG_FILE"
 }
 
@@ -86,19 +86,19 @@ fi
 
 # ====== Self-Backgrounding Logic ======
 if [ "$1" != "--daemon" ]; then
-    // Not running as daemon yet, background ourselves
+    # Not running as daemon yet, background ourselves
     original_args=("${@}")
-    
-    // Setup directories and state before backgrounding
+
+    # Setup directories and state before backgrounding
     setupdirs
     initstate
-    
-    // Restart script in background with daemon flag
+
+    # Restart script in background with daemon flag
     nohup "$0" --daemon "${original_args[@]}" > /dev/null 2>&1 &
-    
-    // Save PID for status checking
+
+    # Save PID for status checking
     echo $! > "$PID_FILE"
-    
+
     echo "f25.sh started in background (PID: $!)"
     exit 0
 fi
