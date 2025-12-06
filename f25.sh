@@ -1,20 +1,15 @@
 #!/bin/bash
-
 # =================================================================
 # f25.sh - Automated Backup System (Fall 2025)
 # =================================================================
-
 # ====== GLOBAL VARIABLES ======
 BACKUP_ROOT="/home/patel7hb/backup"
 LOG_FILE="/home/patel7hb/backup/f25log.txt"
 STATE_FILE="/home/patel7hb/.f25state"
 PID_FILE="/home/patel7hb/.f25.pid"
-
 # File types array (populated from args)
 FILE_TYPES=()
-
 # ====== HELPER FUNCTIONS ======
-
 # Function to create directory structure
 setup_dirs() {
     mkdir -p "$BACKUP_ROOT/fbup"
@@ -22,7 +17,6 @@ setup_dirs() {
     mkdir -p "$BACKUP_ROOT/dbup"
     mkdir -p "$BACKUP_ROOT/isbup"
 }
-
 # ====== STEP 1: Full Backup (HYBRID - Simplified + Uniqueness) ======
 step1_full_backup() {
     local seq=0
@@ -34,7 +28,7 @@ step1_full_backup() {
     
     # ===== SEQUENCE TRACKING =====
     if [[ -f "$STATE_FILE" ]]; then
-        seq=$(grep "fbup_seq:" "$STATE_FILE" 2>/dev/null | cut -d: -f2)
+        seq=$(grep "fbup_seq:" "$STATE_FILE" 2>/dev/null | cut -d: -f2 | cut -d' ' -f1)
         [[ -z "$seq" ]] && seq=0
     fi
     ((seq++))
@@ -87,7 +81,7 @@ step2_incremental_backup() {
     
     # ===== SEQUENCE TRACKING =====
     if [[ -f "$STATE_FILE" ]]; then
-        seq=$(grep "ibup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2)
+        seq=$(grep "ibup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2 | cut -d' ' -f1)
         [[ -z "$seq" ]] && seq=0
     fi
     ((seq++))
@@ -152,7 +146,7 @@ step3_differential_backup() {
     
     # ===== SEQUENCE TRACKING =====
     if [[ -f "$STATE_FILE" ]]; then
-        seq=$(grep "dbup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2)
+        seq=$(grep "dbup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2 | cut -d' ' -f1)
         [[ -z "$seq" ]] && seq=0
     fi
     ((seq++))
@@ -231,7 +225,7 @@ step4_incremental_after_step2() {
     
     # ===== SEQUENCE TRACKING (Shared ibup_seq) =====
     if [[ -f "$STATE_FILE" ]]; then
-        seq=$(grep "ibup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2)
+        seq=$(grep "ibup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2 | cut -d' ' -f1)
         [[ -z "$seq" ]] && seq=0
     fi
     ((seq++))
@@ -300,7 +294,7 @@ step5_incremental_size_backup() {
     
     # ===== SEQUENCE TRACKING =====
     if [[ -f "$STATE_FILE" ]]; then
-        seq=$(grep "isbup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2)
+        seq=$(grep "isbup_seq:" "$STATE_FILE" 2>/dev/null | tail -1 | cut -d: -f2 | cut -d' ' -f1)
         [[ -z "$seq" ]] && seq=0
     fi
     ((seq++))
@@ -445,5 +439,5 @@ while true; do
     esac
     
     # Sleep 2 minutes between steps
-    sleep 120
+    sleep 10
 done
