@@ -1,0 +1,30 @@
+Terminal 1
+echo "=== MONITORING LOG ==="
+while [ ! -f ~/backup/f25log.txt ];
+do 
+sleep 0.5;
+done
+tail -f ~/backup/f25log.txt
+
+Ensure that no instances are running
+Remove the backup file from previous round of backup
+rm -rf ~/testbackup
+
+Terminal 2
+1. Start the daemon
+./f25.sh .txt .pdf
+
+2. Wait for fbup-1.tar
+echo "new file c" > ~/test_data/c.txt
+
+3. Wait for ibup-1.tar
+echo "diff file d" > ~/test_data/d.pdf
+
+4. Wait for dbup-1.tar
+echo "update to c" >> ~/test_data/c.txt
+
+5. Wait for ibup-2.tar
+dd if=/dev/zero of=~/test_data/big.txt bs=1024 count=50
+
+6. Wait for isbup-1.tar, then stop
+Script Completed !!!

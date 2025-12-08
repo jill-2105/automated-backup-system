@@ -2,13 +2,16 @@
 # =================================================================
 # f25.sh - Automated Backup System (Fall 2025)
 # =================================================================
+
 # ====== GLOBAL VARIABLES ======
 BACKUP_ROOT="/home/patel7hb/backup"
 LOG_FILE="/home/patel7hb/backup/f25log.txt"
 STATE_FILE="/home/patel7hb/.f25state"
 PID_FILE="/home/patel7hb/.f25.pid"
+
 # File types array (populated from args)
 FILE_TYPES=()
+
 # ====== HELPER FUNCTIONS ======
 # Function to create directory structure
 setup_dirs() {
@@ -17,7 +20,8 @@ setup_dirs() {
     mkdir -p "$BACKUP_ROOT/dbup"
     mkdir -p "$BACKUP_ROOT/isbup"
 }
-# ====== STEP 1: Full Backup (HYBRID - Simplified + Uniqueness) ======
+
+# ====== STEP 1: Full Backup ======
 step1_full_backup() {
     local seq=0
     local timestamp
@@ -69,7 +73,7 @@ step1_full_backup() {
     rm -f "$tmp_list"
 }
 
-# ====== STEP 2: Incremental Backup (After Step 1) ======
+# ====== STEP 2: Incremental Backup ======
 step2_incremental_backup() {
     local seq=0
     local timestamp
@@ -133,7 +137,7 @@ step2_incremental_backup() {
     rm -f "$tmp_list"
 }
 
-# ====== STEP 3: Differential Backup (Since Step 1) ======
+# ====== STEP 3: Differential Backup ======
 step3_differential_backup() {
     local seq=0
     local timestamp
@@ -169,7 +173,7 @@ step3_differential_backup() {
     tarpath="$BACKUP_ROOT/dbup/$tarname"
     mkdir -p "$BACKUP_ROOT/dbup"
     
-    # ===== FILE COLLECTION (Manual Stat Loop) =====
+    # ===== FILE COLLECTION =====
     tmp_list=$(mktemp "/tmp/f25_diff_files.XXXXXX")
     
     if [[ "${FILE_TYPES[0]}" == "*" ]]; then
@@ -212,7 +216,7 @@ step3_differential_backup() {
     rm -f "$tmp_list"
 }
 
-# ====== STEP 4: Incremental Backup (After Step 2) ======
+# ====== STEP 4: Incremental Backup ======
 step4_incremental_after_step2() {
     local seq=0
     local timestamp
@@ -243,7 +247,7 @@ step4_incremental_after_step2() {
     tarpath="$BACKUP_ROOT/ibup/$tarname"
     mkdir -p "$BACKUP_ROOT/ibup"
     
-    # ===== FILE COLLECTION (Touch Reference) =====
+    # ===== FILE COLLECTION =====
     tmp_list=$(mktemp "/tmp/f25_inc2_files.XXXXXX")
     ref_file=$(mktemp "/tmp/f25_ref.XXXXXX")
     
@@ -279,7 +283,7 @@ step4_incremental_after_step2() {
     rm -f "$tmp_list" "$ref_file"
 }
 
-# ====== STEP 5: Size-Filtered Incremental (After Step 4, >40KB) ======
+# ====== STEP 5: Size-Filtered Incremental ======
 step5_incremental_size_backup() {
     local seq=0
     local timestamp
@@ -354,37 +358,22 @@ step5_incremental_size_backup() {
     rm -f "$tmp_list" "$tmp_filtered"
 }
 
-# =================================================================
-# MAIN EXECUTION LOGIC
-# =================================================================
+# ====== MAIN EXECUTION LOGIC ======
 
-# 1. Check for STATUS command
-if [[ "$1" == "status" ]]; then
-    if [[ -f "$PID_FILE" ]]; then
-        pid=$(cat "$PID_FILE")
-        if kill -0 "$pid" 2>/dev/null; then
-            echo "f25.sh is running (PID: $pid)"
-        else
-            echo "f25.sh is not running (stale PID file)"
-            rm -f "$PID_FILE"
-        fi
-    else
-        echo "f25.sh is not running"
-    fi
-    exit 0
+# Argument Validation
+if [[ $# -gt 4 ]]; then
+    echo "Maximum 4 arguments"
+    exit 1
 fi
 
-# 2. Self-Backgrounding Logic
+# Self-Backgrounding Logic
 if [[ "$1" != "--daemon" ]]; then
     # Store original arguments
     original_args=("${@}")
     
     # Setup directories immediately
     setup_dirs
-    
-    # Clear state file on new run (optional, safer for testing)
-    # rm -f "$STATE_FILE"
-    
+      
     # Run self in background
     nohup "$0" --daemon "${original_args[@]}" > /dev/null 2>&1 &
     
@@ -394,7 +383,6 @@ if [[ "$1" != "--daemon" ]]; then
     exit 0
 fi
 
-# 3. DAEMON MODE (Running in background)
 shift # Remove --daemon argument
 
 # Parse File Types
@@ -409,9 +397,8 @@ setup_dirs
 
 # Log startup
 timestamp=$(date "+%a %d %b %Y %I:%M:%S %p %Z")
-# echo "$timestamp Daemon started" >> "$LOG_FILE"
 
-# 4. Continuous Loop
+# Continuous Loop
 current_step=1
 
 while true; do
@@ -439,5 +426,5 @@ while true; do
     esac
     
     # Sleep 2 minutes between steps
-    sleep 10
+    sleep 120
 done
